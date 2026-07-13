@@ -10,6 +10,7 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 const DATABASE_URL = process.env.DATABASE_URL ?? "";
 const TOKEN_SECRET = process.env.TOKEN_SECRET ?? "change-this-secret-before-production";
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "*";
+const CORS_ALLOWLIST = CORS_ORIGIN.split(",").map(value => value.trim()).filter(Boolean);
 const BUSINESS_TIMEZONE = process.env.BUSINESS_TIMEZONE ?? "Asia/Kuala_Lumpur";
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
 const EMAIL_FROM = process.env.EMAIL_FROM ?? "";
@@ -76,13 +77,30 @@ function shouldUseSsl(connectionString) {
   return !/(localhost|127\.0\.0\.1)/i.test(connectionString);
 }
 
-function send(res, status, body) {
-  res.writeHead(status, {
+function originMatches(rule, origin) {
+  if (rule === "*") return true;
+  if (!rule.includes("*")) return rule === origin;
+  const pattern = new RegExp(`^${rule.split("*").map(part => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*")}$`);
+  return pattern.test(origin);
+}
+
+function resolveCorsOrigin(req) {
+  const requestOrigin = req.headers.origin;
+  if (!requestOrigin) return CORS_ALLOWLIST[0] ?? "*";
+  if (CORS_ALLOWLIST.some(rule => originMatches(rule, requestOrigin))) return requestOrigin;
+  return CORS_ALLOWLIST.includes("*") ? "*" : "";
+}
+
+function send(req, res, status, body) {
+  const allowedOrigin = resolveCorsOrigin(req);
+  const headers = {
     "content-type": "application/json; charset=utf-8",
-    "access-control-allow-origin": CORS_ORIGIN,
     "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
     "access-control-allow-headers": "content-type,authorization",
-  });
+    vary: "Origin",
+  };
+  if (allowedOrigin) headers["access-control-allow-origin"] = allowedOrigin;
+  res.writeHead(status, headers);
   res.end(JSON.stringify(body));
 }
 
@@ -1644,16 +1662,16 @@ const routes = [
 
 const server = createServer(async (req, res) => {
   try {
-    if (req.method === "OPTIONS") return send(res, 204, {});
+    if (req.method === "OPTIONS") return send(req, res, 204, {});
     const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
     const route = routes.find(([method, pattern]) => method === req.method && pattern.test(url.pathname));
     if (!route) throw new HttpError(404, "Route not found.");
     const [, pattern, handler] = route;
     const body = ["POST", "PATCH", "DELETE"].includes(req.method) ? await readJson(req) : {};
     const result = await handler(req, body, url, url.pathname.match(pattern));
-    send(res, req.method === "POST" ? 201 : 200, result);
+    send(req, res, req.method === "POST" ? 201 : 200, result);
   } catch (error) {
-    send(res, error.status ?? 500, { error: error.message || "Unexpected server error." });
+    send(req, res, error.status ?? 500, { error: error.message || "Unexpected server error." });
   }
 });
 

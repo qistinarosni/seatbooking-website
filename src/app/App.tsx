@@ -2828,6 +2828,7 @@ export default function App() {
   const [adminLogs, setAdminLogs] = useState<ActivityLog[]>([]);
   const [adminDashboard, setAdminDashboard] = useState<AdminDashboard | null>(null);
   const [adminOrders, setAdminOrders] = useState<FoodOrder[]>([]);
+  const [pendingBookingPayments, setPendingBookingPayments] = useState<Booking[]>([]);
   const [editingAdminId, setEditingAdminId] = useState<string | null>(null);
   const [adminEditForm, setAdminEditForm] = useState({ username: "", password: "", role: "admin" as AdminAccount["role"] });
   const [salesRange, setSalesRange] = useState<SalesRange>("week");
@@ -2872,10 +2873,8 @@ export default function App() {
     [allBookings, customer]
   );
   const pendingPaymentBookings = useMemo(
-    () => allBookings
-      .filter(booking => booking.status === "payment_pending")
-      .sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime()),
-    [allBookings]
+    () => [...pendingBookingPayments].sort((a, b) => b.paidAt.getTime() - a.paidAt.getTime()),
+    [pendingBookingPayments]
   );
   const pendingFoodPayments = useMemo(
     () => foodPaymentRequests
@@ -3385,12 +3384,19 @@ export default function App() {
     if(view!=="admin"||!adminToken||!adminAuth) return;
     let cancelled = false;
     const refresh = async () => {
-      try {
-        await loadAdminBookings(adminToken);
-        await loadFoodPaymentRequests(adminToken);
-        if (adminAuth.role === "superadmin") await loadSuperadminData(adminToken);
-      } catch {
-        if (cancelled) return;
+      const tasks: Promise<unknown>[] = [
+        loadAdminBookings(adminToken),
+        loadPendingBookingPayments(adminToken),
+        loadFoodPaymentRequests(adminToken),
+      ];
+      if (adminAuth.role === "superadmin") {
+        tasks.push(loadSuperadminData(adminToken));
+      }
+      const results = await Promise.allSettled(tasks);
+      if (cancelled) return;
+      const failed = results.find((result): result is PromiseRejectedResult => result.status === "rejected");
+      if (failed) {
+        console.error("Admin refresh failed:", failed.reason);
       }
     };
     refresh();
@@ -3572,6 +3578,11 @@ export default function App() {
     setAllBookings(bookings.map(normalizeBooking));
   }
 
+  async function loadPendingBookingPayments(token: string) {
+    const bookings=await apiFetch<any[]>("/api/admin/bookings?status=payment_pending", { headers:bearer(token) });
+    setPendingBookingPayments(bookings.map(normalizeBooking));
+  }
+
   async function loadFoodPaymentRequests(token: string) {
     const requests = await apiFetch<any[]>("/api/admin/food-payment-requests", { headers: bearer(token) });
     setFoodPaymentRequests(requests.map(normalizeFoodPaymentRequest));
@@ -3654,6 +3665,7 @@ export default function App() {
       setAdminAuth(account);
       setView("admin");
       await loadAdminBookings(result.token);
+      await loadPendingBookingPayments(result.token);
       await loadFoodPaymentRequests(result.token);
       if(account.role==="superadmin"){
         await loadSuperadminData(result.token);
@@ -3694,6 +3706,7 @@ export default function App() {
         headers: bearer(adminToken),
       }));
       setAllBookings(prev=>prev.map(item=>item.ref===ref?updated:item));
+      setPendingBookingPayments(prev=>prev.map(item=>item.ref===ref?updated:item).filter(item=>item.status==="payment_pending"));
       if (booking?.ref === ref) setBooking(updated);
       if (adminAuth?.role === "superadmin") await loadSuperadminData(adminToken);
     } catch (error) {
@@ -3709,6 +3722,7 @@ export default function App() {
         headers: bearer(adminToken),
       }));
       setAllBookings(prev => prev.map(item => item.ref === ref ? updated : item));
+      setPendingBookingPayments(prev=>prev.map(item=>item.ref===ref?updated:item).filter(item=>item.status==="payment_pending"));
       if (booking?.ref === ref) {
         setBooking(updated);
       }
@@ -3726,6 +3740,7 @@ export default function App() {
         headers: bearer(adminToken),
       }));
       setAllBookings(prev => prev.map(item => item.ref === ref ? updated : item));
+      setPendingBookingPayments(prev=>prev.map(item=>item.ref===ref?updated:item).filter(item=>item.status==="payment_pending"));
       if (booking?.ref === ref) {
         setBooking(updated);
       }
