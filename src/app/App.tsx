@@ -6,7 +6,7 @@ import {
   ScanLine, RefreshCw, Users, Eye, EyeOff, Building2,
   Sparkles, ArrowRight, QrCode, Plus, Minus, ShoppingBag,
   Truck, UtensilsCrossed, Filter, Calendar, Clock, Pencil, User, Mail, Phone,
-  LogOut, Trash2, UserPlus, ToggleLeft, ToggleRight, Download,
+  LogOut, Trash2, UserPlus, ToggleLeft, ToggleRight, Download, Search,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -278,29 +278,13 @@ function bookingStatusAt(booking: Booking, now = new Date()): Booking["status"] 
   return booking.status;
 }
 function compareAdminBookingOrder(a: Booking, b: Booking, now = new Date()) {
-  const nowTime = now.getTime();
   const aStart = bookingStartDate(a).getTime();
   const bStart = bookingStartDate(b).getTime();
   const aEnd = bookingEndDate(a).getTime();
   const bEnd = bookingEndDate(b).getTime();
-
-  const aCurrent = aStart <= nowTime && aEnd > nowTime;
-  const bCurrent = bStart <= nowTime && bEnd > nowTime;
-  if (aCurrent !== bCurrent) return aCurrent ? -1 : 1;
-
-  const aUpcoming = aStart > nowTime;
-  const bUpcoming = bStart > nowTime;
-  if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
-
-  if (aCurrent && bCurrent) {
-    return aStart - bStart || aEnd - bEnd || a.ref.localeCompare(b.ref);
-  }
-
-  if (aUpcoming && bUpcoming) {
-    return aStart - bStart || aEnd - bEnd || a.ref.localeCompare(b.ref);
-  }
-
-  return bStart - aStart || bEnd - aEnd || a.ref.localeCompare(b.ref);
+  const aPaid = a.paidAt?.getTime?.() ?? 0;
+  const bPaid = b.paidAt?.getTime?.() ?? 0;
+  return bStart - aStart || bEnd - aEnd || bPaid - aPaid || b.ref.localeCompare(a.ref);
 }
 function selectionWindow(date: string, duration: number, startHour: number | null) {
   if (!date) return null;
@@ -2850,7 +2834,7 @@ export default function App() {
   const [adminEditForm, setAdminEditForm] = useState({ username: "", password: "", role: "admin" as AdminAccount["role"] });
   const [salesRange, setSalesRange] = useState<SalesRange>("week");
   const [vendorSalesRange, setVendorSalesRange] = useState<SalesRange>("week");
-  const [custFilter,    setCustFilter]    = useState({date:"",hour:"",status:""});
+  const [custFilter,    setCustFilter]    = useState({date:"",hour:"",status:"",ref:""});
   // ── Scan ──
   const [scanInput, setScanInput] = useState("");
   const [scanState, setScanState] = useState<"idle"|"valid"|"invalid"|"checkedIn">("idle");
@@ -3198,10 +3182,12 @@ export default function App() {
   // Filtered bookings for admin
   const filteredBookings = useMemo(()=>{
     const now = new Date();
+    const refQuery = custFilter.ref.trim().toUpperCase();
     return allBookings.filter(b=>{
       if (custFilter.date&&b.date!==custFilter.date) return false;
       if (custFilter.hour&&b.startHour!==parseInt(custFilter.hour)) return false;
       if (custFilter.status&&bookingStatusAt(b, now)!==custFilter.status) return false;
+      if (refQuery && !b.ref.toUpperCase().includes(refQuery)) return false;
       return true;
     }).sort((a,b)=>compareAdminBookingOrder(a,b,now));
   },[allBookings,custFilter]);
@@ -4661,6 +4647,15 @@ export default function App() {
             </div>
             {/* Filters */}
             <div className="flex flex-wrap gap-3 mb-5">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"/>
+                <input
+                  value={custFilter.ref}
+                  onChange={e=>setCustFilter(f=>({...f,ref:e.target.value.toUpperCase()}))}
+                  placeholder="Search reference number"
+                  className="bg-card border border-border rounded-lg pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:border-primary/50 transition-colors min-w-[220px]"
+                />
+              </div>
               <div className="flex items-center gap-1.5">
                 <Filter className="w-3.5 h-3.5 text-muted-foreground"/>
                 <select value={custFilter.date} onChange={e=>setCustFilter(f=>({...f,date:e.target.value}))}
@@ -4684,8 +4679,8 @@ export default function App() {
                   <option value="expired">Expired</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
-              {(custFilter.date||custFilter.hour||custFilter.status)&&(
-                <button onClick={()=>setCustFilter({date:"",hour:"",status:""})} className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">Clear filters</button>
+              {(custFilter.date||custFilter.hour||custFilter.status||custFilter.ref)&&(
+                <button onClick={()=>setCustFilter({date:"",hour:"",status:"",ref:""})} className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">Clear filters</button>
               )}
             </div>
 
