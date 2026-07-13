@@ -8,6 +8,7 @@
     "dev": "vite",
     "api": "node workhub-api.js",
     "api:dev": "node --watch workhub-api.js",
+    "migrate:accounts": "node scripts/migrate-sqlite-accounts-to-postgres.mjs",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },

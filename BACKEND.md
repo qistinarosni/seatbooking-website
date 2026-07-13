@@ -19,8 +19,21 @@ Default demo logins:
 ```text
 Admin:  admin / workhub2024
 Desk:   desk1 / desk1234
-Cafe:   cafe / cafe2024
-Pizza:  pizza / pizza2024
+Vendor superadmin: vendoradmin / vendorhub2024
+Cafe vendor:       cafeadmin / cafe2024
+Pizza vendor:      sliceadmin / slice2024
+```
+
+Migrate local SQLite admin/vendor accounts into Postgres:
+
+```bash
+DATABASE_URL="your-render-or-postgres-url" npm run migrate:accounts
+```
+
+Optional if your local SQLite file is not `workhub.sqlite`:
+
+```bash
+DATABASE_URL="your-render-or-postgres-url" SQLITE_DB_PATH=workhub-updated.sqlite npm run migrate:accounts
 ```
 
 Important routes:
