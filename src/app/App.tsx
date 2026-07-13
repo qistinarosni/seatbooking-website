@@ -266,10 +266,6 @@ function bookingDisplayDate(booking: Booking) {
   return fmtDateFull(booking.date);
 }
 function bookingStatusAt(booking: Booking, now = new Date()): Booking["status"] {
-  if (["payment_pending", "completed", "expired", "cancelled"].includes(booking.status)) return booking.status;
-  if (bookingEndDate(booking).getTime() <= now.getTime()) {
-    return booking.checkInAt ? "completed" : "expired";
-  }
   return booking.status;
 }
 function compareAdminBookingOrder(a: Booking, b: Booking, now = new Date()) {
@@ -2895,15 +2891,10 @@ export default function App() {
     [foodPaymentRequests]
   );
   const pendingCheckIns = useMemo(
-    () => allBookings.filter(booking => {
-      if (booking.status !== "paid" || booking.checkInAt) return false;
-      const start = bookingStartDate(booking).getTime();
-      const end = bookingEndDate(booking).getTime();
-      const current = Date.now();
-      return start <= current && end > current;
-    }).length,
+    () => allBookings.filter(booking => booking.status === "paid" && !booking.checkInAt).length,
     [allBookings]
   );
+  const verifyPaymentsCount = pendingPaymentBookings.length + pendingFoodPayments.length;
 
   function selectionTimeLabel() {
     if (!seat || !selectedDate) return "";
@@ -3999,7 +3990,7 @@ export default function App() {
 
   const adminTabs: { key: AdminTab; label: string }[] = adminAuth?.role === "superadmin"
     ? [
-        { key: "payments", label: `Verify Payments (${pendingPaymentBookings.length + pendingFoodPayments.length})` },
+        { key: "payments", label: `Verify Payments (${verifyPaymentsCount})` },
         { key: "scan", label: `Check-in (${pendingCheckIns})` },
         { key: "customers", label: "Bookings" },
         { key: "availability", label: "Availability" },
@@ -4009,7 +4000,7 @@ export default function App() {
         { key: "accounts", label: "Accounts" },
       ]
     : [
-        { key: "payments", label: `Verify Payments (${pendingPaymentBookings.length + pendingFoodPayments.length})` },
+        { key: "payments", label: `Verify Payments (${verifyPaymentsCount})` },
         { key: "scan", label: `Check-in (${pendingCheckIns})` },
         { key: "customers", label: "Bookings" },
         { key: "availability", label: "Availability" },
@@ -4461,7 +4452,7 @@ export default function App() {
       </header>
 
       <div className="bg-card border-b border-border px-6">
-        <div className="flex overflow-x-auto" style={{scrollbarWidth:"none"}}>
+        <div key={`${verifyPaymentsCount}-${pendingCheckIns}-${adminAuth.role}`} className="flex overflow-x-auto" style={{scrollbarWidth:"none"}}>
           {adminTabs.map(t=>(
             <button key={t.key} onClick={()=>setAdminTab(t.key)}
               className={["shrink-0 px-4 py-3.5 text-sm border-b-2 transition-colors",
