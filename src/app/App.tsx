@@ -1215,9 +1215,10 @@ function MobileBookingFooter({ selectedDate, selectedHour, duration, seat, meta,
 }
 
 // ── Date Time Picker (inline sidebar) ─────────────────────────────────────────
-function DateTimePicker({ selectedDate, selectedHour, duration, selectedSeat, onDateChange, onHourChange, onDurationChange }: {
+function DateTimePicker({ selectedDate, selectedHour, duration, selectedSeat, onDateChange, onHourChange, onDurationChange, mobileCompact=false }: {
   selectedDate:string; selectedHour:number|null; duration:number; selectedSeat: Seat | null;
   onDateChange:(d:string)=>void; onHourChange:(h:number|null)=>void; onDurationChange:(n:number)=>void;
+  mobileCompact?: boolean;
 }) {
   const today = getDateStr(0);
   const now = new Date();
@@ -1264,12 +1265,21 @@ function DateTimePicker({ selectedDate, selectedHour, duration, selectedSeat, on
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Start Time</p>
           {selectedDate===today&&hours.every(h=>!isHourOk(h))&&<p className="text-xs text-muted-foreground mb-2">Bookings are closed for today.</p>}
-          <div className="grid grid-cols-2 gap-1">
+          <div
+            className={mobileCompact
+              ? "flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1"
+              : "grid grid-cols-2 gap-1"}
+            style={mobileCompact ? { scrollbarWidth:"none" } : undefined}
+          >
             {hours.map(h=>{
               const ok=isHourOk(h), isSel=selectedHour===h;
               return (
                 <button key={h} disabled={!ok} onClick={()=>onHourChange(h)}
-                  className={["rounded-lg py-1.5 text-xs font-mono font-medium border transition-all",
+                  className={[
+                    mobileCompact
+                      ? "shrink-0 min-w-[4.15rem] rounded-lg px-2.5 py-1.5 text-[11px] leading-none"
+                      : "rounded-lg py-1.5 text-xs",
+                    "font-mono font-medium border transition-all",
                     !ok?"bg-muted/30 border-border/30 text-muted-foreground/40 cursor-not-allowed"
                     :isSel?"bg-[#15345d] text-white border-[#15345d] shadow-[0_14px_30px_rgba(21,52,93,0.18)]"
                           :"bg-background border-border hover:border-primary/50",
@@ -1286,14 +1296,23 @@ function DateTimePicker({ selectedDate, selectedHour, duration, selectedSeat, on
       {selectedDate && (!needsScheduledTime || selectedHour !== null) && (needsScheduledTime || rollingOpenNow) && (
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Duration</p>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div
+            className={mobileCompact
+              ? "flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1"
+              : "grid grid-cols-4 gap-1.5"}
+            style={mobileCompact ? { scrollbarWidth:"none" } : undefined}
+          >
             {[1,2,3,4,5,6,7,8].map(h=>{
               const fits = needsScheduledTime
                 ? (selectedHour !== null && selectedHour + h <= 22)
                 : rollingDurationFits(h, now);
               return (
                 <button key={h} disabled={!fits} onClick={()=>onDurationChange(h)}
-                  className={["rounded-xl py-2 text-sm font-semibold border transition-all",
+                  className={[
+                    mobileCompact
+                      ? "shrink-0 min-w-[3.6rem] rounded-xl px-3 py-1.5 text-xs leading-none"
+                      : "rounded-xl py-2 text-sm",
+                    "font-semibold border transition-all",
                     !fits?"bg-muted/30 border-border/30 text-muted-foreground/40 cursor-not-allowed"
                     :duration===h?"bg-[#15345d] text-white border-[#15345d] shadow-[0_14px_30px_rgba(21,52,93,0.18)]"
                                :"bg-background border-border text-muted-foreground hover:border-primary/40 hover:text-primary",
@@ -4204,6 +4223,7 @@ export default function App() {
               selectedHour={selectedHour}
               duration={duration}
               selectedSeat={seat}
+              mobileCompact
               onDateChange={d=>{setSelectedDate(d);setSelectedHour(null);setSelectedId(null);}}
               onHourChange={h=>{setSelectedHour(h);setSelectedId(null);}}
               onDurationChange={n=>{setDuration(n);setSelectedId(null);}}
