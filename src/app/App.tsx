@@ -11,7 +11,7 @@ import {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type AppView =
-  | "landingPage" | "landing" | "book" | "pay" | "qr" | "food" | "active" | "expired"
+  | "landingPage" | "landing" | "book" | "pay" | "payPending" | "qr" | "food" | "active" | "expired"
   | "adminLogin" | "adminSignup" | "admin"
   | "vendorLogin" | "vendor";
 type AdminTab = "payments" | "scan" | "customers" | "availability" | "dashboard" | "orders" | "logs" | "accounts";
@@ -3414,7 +3414,7 @@ export default function App() {
   },[view, vendorToken, vendorAuth]);
 
   useEffect(() => {
-    if (view !== "pay" || !booking || booking.status !== "payment_pending") return;
+    if (view !== "payPending" || !booking || booking.status !== "payment_pending") return;
     let cancelled = false;
     const poll = async () => {
       try {
@@ -3517,7 +3517,7 @@ export default function App() {
       setBooking(b);
       setAllBookings(prev=>[...prev.filter(x=>x.ref!==b.ref),b]);
       setServerOccupied(null);
-      setView("pay");
+      setView("payPending");
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "We could not create this payment request. Please try again.");
     } finally {
@@ -3966,7 +3966,7 @@ export default function App() {
   function adminBack() {
     if(booking?.status==="active")return setView("active");
     if(booking?.status==="paid")return setView("qr");
-    if(booking?.status==="payment_pending")return setView("pay");
+    if(booking?.status==="payment_pending")return setView("payPending");
     return setView(customer?"book":"landing");
   }
 
@@ -4236,56 +4236,56 @@ export default function App() {
   if(view==="pay") return (
     <div className="portal-theme min-h-screen bg-background flex items-center justify-center p-6">
       <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} className="w-full max-w-3xl">
-        {booking?.status !== "payment_pending" && (
-          <button onClick={()=>setView("book")} className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6 hover:text-foreground transition-colors">
-            <ArrowLeft className="w-4 h-4"/>Back to seat map
-          </button>
-        )}
+        <button onClick={()=>setView("book")} className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6 hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4"/>Back to seat map
+        </button>
 
-        {booking?.status === "payment_pending" ? (
-          <>
-            <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center mx-auto mb-4">
-              <RefreshCw className="w-5 h-5 text-primary animate-spin"/>
+        <>
+          <h1 className="font-serif text-3xl mb-0.5">Pay by QR</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Scan this payment QR, pay the amount below, and use <span className="font-semibold text-foreground">Quety Study Lounge</span> as the description.
+          </p>
+          <div className="space-y-3 mb-4">
+            <PaymentQrGallery amount={grand} description="Quety Study Lounge" />
+            <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Booking Details</p>
+              <div className="flex justify-between gap-3 text-sm"><span className="text-muted-foreground">Customer</span><span className="font-medium text-right">{customer?.name ?? "—"}</span></div>
+              <div className="flex justify-between gap-3 text-sm"><span className="text-muted-foreground">Seat</span><span className="font-medium text-right">{seat ? seatName(seat) : "—"}</span></div>
+              <div className="flex justify-between gap-3 text-sm"><span className="text-muted-foreground">Time</span><span className="font-medium text-right">{selectionTimeLabel()}</span></div>
+              <div className="flex justify-between gap-3 text-sm border-t border-border pt-3"><span className="text-muted-foreground">Total</span><span className="font-semibold text-primary text-right">{fmtMoney(grand)}</span></div>
             </div>
-            <h1 className="font-serif text-3xl mb-1 text-center">Waiting for Payment Verification</h1>
-            <p className="text-sm text-muted-foreground mb-6 text-center">
-              Your payment request has been sent to reception. Once the admin verifies it, this page will move to your booking confirmation automatically.
-            </p>
-            <PaymentQrGallery amount={booking.total ?? grand} description="Quety Study Lounge" />
-            <div className="bg-card rounded-2xl border border-border p-4 mt-4 shadow-sm">
-              <div className="font-mono text-lg font-bold tracking-widest text-center">{booking.ref}</div>
-              <div className="text-xs text-muted-foreground mt-0.5 text-center">Payment Request Reference</div>
-            </div>
-            <div className="bg-card rounded-2xl border border-border p-4 text-sm space-y-2">
-              <div className="flex justify-between gap-3"><span className="text-muted-foreground">Customer</span><span className="font-medium text-right">{booking.name}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-muted-foreground">Seat</span><span className="font-medium text-right">{seatById(booking.seatId)?seatName(seatById(booking.seatId)!):booking.seatId}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-muted-foreground">Amount</span><span className="font-semibold text-primary text-right">{fmtMoney(booking.total ?? grand)}</span></div>
-            </div>
-          </>
-        ) : (
-          <>
-            <h1 className="font-serif text-3xl mb-0.5">Pay by QR</h1>
-            <p className="text-sm text-muted-foreground mb-6">
-              Scan this payment QR, pay the amount below, and use <span className="font-semibold text-foreground">Quety Study Lounge</span> as the description.
-            </p>
-            <div className="space-y-3 mb-4">
-              <PaymentQrGallery amount={grand} description="Quety Study Lounge" />
-              <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Booking Details</p>
-                <div className="flex justify-between gap-3 text-sm"><span className="text-muted-foreground">Customer</span><span className="font-medium text-right">{customer?.name ?? "—"}</span></div>
-                <div className="flex justify-between gap-3 text-sm"><span className="text-muted-foreground">Seat</span><span className="font-medium text-right">{seat ? seatName(seat) : "—"}</span></div>
-                <div className="flex justify-between gap-3 text-sm"><span className="text-muted-foreground">Time</span><span className="font-medium text-right">{selectionTimeLabel()}</span></div>
-                <div className="flex justify-between gap-3 text-sm border-t border-border pt-3"><span className="text-muted-foreground">Total</span><span className="font-semibold text-primary text-right">{fmtMoney(grand)}</span></div>
-              </div>
-            </div>
-            <button disabled={paymentBusy || !canProceedToPayment} onClick={handlePay}
-              className={["w-full rounded-xl py-3.5 text-sm font-semibold flex items-center justify-center gap-2 transition-opacity shadow",
-                paymentBusy || !canProceedToPayment ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-[#15345d] text-white hover:opacity-90 shadow-[0_14px_30px_rgba(21,52,93,0.18)]",
-              ].join(" ")}>
-              {paymentBusy ? "Sending Payment For Verification..." : <>I Have Paid <ChevronRight className="w-4 h-4"/></>}
-            </button>
-          </>
-        )}
+          </div>
+          <button disabled={paymentBusy || !canProceedToPayment} onClick={handlePay}
+            className={["w-full rounded-xl py-3.5 text-sm font-semibold flex items-center justify-center gap-2 transition-opacity shadow",
+              paymentBusy || !canProceedToPayment ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-[#15345d] text-white hover:opacity-90 shadow-[0_14px_30px_rgba(21,52,93,0.18)]",
+            ].join(" ")}>
+            {paymentBusy ? "Sending Payment For Verification..." : <>I Have Paid <ChevronRight className="w-4 h-4"/></>}
+          </button>
+        </>
+      </motion.div>
+    </div>
+  );
+
+  if(view==="payPending" && booking) return (
+    <div className="portal-theme min-h-screen bg-background flex items-center justify-center p-6">
+      <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} className="w-full max-w-3xl">
+        <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center mx-auto mb-4">
+          <RefreshCw className="w-5 h-5 text-primary animate-spin"/>
+        </div>
+        <h1 className="font-serif text-3xl mb-1 text-center">Waiting for Payment Verification</h1>
+        <p className="text-sm text-muted-foreground mb-6 text-center">
+          Your payment request has been sent to reception. Once the admin verifies it, this page will move to your booking confirmation automatically.
+        </p>
+        <PaymentQrGallery amount={booking.total ?? grand} description="Quety Study Lounge" />
+        <div className="bg-card rounded-2xl border border-border p-4 mt-4 shadow-sm">
+          <div className="font-mono text-lg font-bold tracking-widest text-center">{booking.ref}</div>
+          <div className="text-xs text-muted-foreground mt-0.5 text-center">Payment Request Reference</div>
+        </div>
+        <div className="bg-card rounded-2xl border border-border p-4 text-sm space-y-2">
+          <div className="flex justify-between gap-3"><span className="text-muted-foreground">Customer</span><span className="font-medium text-right">{booking.name}</span></div>
+          <div className="flex justify-between gap-3"><span className="text-muted-foreground">Seat</span><span className="font-medium text-right">{seatById(booking.seatId)?seatName(seatById(booking.seatId)!):booking.seatId}</span></div>
+          <div className="flex justify-between gap-3"><span className="text-muted-foreground">Amount</span><span className="font-semibold text-primary text-right">{fmtMoney(booking.total ?? grand)}</span></div>
+        </div>
       </motion.div>
     </div>
   );
