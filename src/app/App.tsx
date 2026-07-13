@@ -167,8 +167,12 @@ const DEFAULT_MENU: FoodItem[] = [
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getDateStr(daysAhead = 0) {
-  const d = new Date(); d.setDate(d.getDate() + daysAhead);
-  return d.toISOString().split("T")[0];
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 function safeHour(offset: number) { return Math.min(Math.max(8, new Date().getHours() + offset), 19); }
 function fmtTime(sec: number) {
@@ -233,7 +237,12 @@ function scheduledStart(date: string, hour: number) {
   return new Date(`${date}T${String(hour).padStart(2, "0")}:00:00`);
 }
 function bookingStartDate(booking: Booking) {
-  return booking.startAt ?? scheduledStart(booking.date, booking.startHour);
+  if (booking.startAt) return booking.startAt;
+  const seat = seatById(booking.seatId);
+  if (booking.status !== "payment_pending" && seat && isRollingZone(seat.zone)) {
+    return booking.paidAt;
+  }
+  return scheduledStart(booking.date, booking.startHour);
 }
 function bookingEndDate(booking: Booking) {
   return addHours(bookingStartDate(booking), booking.duration);
@@ -3433,7 +3442,7 @@ export default function App() {
         setAllBookings(prev => prev.some(item => item.ref === latest.ref)
           ? prev.map(item => item.ref === latest.ref ? latest : item)
           : [latest, ...prev]);
-        if (latest.status === "paid") {
+        if (latest.status === "paid" || latest.status === "active" || latest.status === "completed") {
           prepareConfirmationEmailNotice(latest);
           setView("qr");
           return;
@@ -3443,6 +3452,13 @@ export default function App() {
           setBooking(null);
           setSelectedId(null);
           setView("book");
+          return;
+        }
+        if (latest.status === "expired") {
+          window.alert("This booking has expired.");
+          setBooking(latest);
+          setSelectedId(null);
+          setView("expired");
         }
       } catch {}
     };

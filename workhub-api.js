@@ -223,7 +223,17 @@ function scheduledStartDate(dateValue, startHour) {
 }
 
 function bookingStartDate(row) {
-  return row.start_at ? parseDbTimestamp(row.start_at) : scheduledStartDate(row.date, row.start_hour);
+  if (row.start_at) return parseDbTimestamp(row.start_at);
+  const seat = row.seat_id ? seatById(row.seat_id) : null;
+  if (
+    row.status !== "payment_pending" &&
+    row.paid_at &&
+    seat &&
+    isRollingZone(seat.zone)
+  ) {
+    return parseDbTimestamp(row.paid_at);
+  }
+  return scheduledStartDate(row.date, row.start_hour);
 }
 
 function bookingEndDate(row) {
@@ -523,7 +533,7 @@ async function sendBookingConfirmation(row) {
 async function expireOldSessions() {
   const now = Date.now();
   const rows = await dbAll(`
-    SELECT ref, date, start_hour, start_at, duration, status, check_in_at
+    SELECT ref, seat_id, date, start_hour, start_at, paid_at, duration, status, check_in_at
     FROM bookings
     WHERE status IN ('paid', 'active')
   `);
@@ -562,7 +572,7 @@ function requestedWindow(dateValue, startHour, duration) {
 async function overlappingSeatIds(window, client = pool) {
   const occupied = new Set();
   const rows = await dbAll(`
-    SELECT seat_id, date, start_hour, start_at, duration, status
+    SELECT seat_id, date, start_hour, start_at, paid_at, duration, status
     FROM bookings
     WHERE status IN ('payment_pending', 'paid', 'active')
   `, [], client);
