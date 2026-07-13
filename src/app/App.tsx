@@ -1569,13 +1569,13 @@ function AuthShell({ title, subtitle, onBack, children }: { title:string; subtit
 }
 
 // ── Admin Login ───────────────────────────────────────────────────────────────
-function AdminLoginPage({ onLogin, onBack }: { onLogin:(username:string,password:string)=>Promise<boolean>; onBack:()=>void; }) {
-  const [u,setU]=useState(""); const [p,setP]=useState(""); const [showP,setShowP]=useState(false); const [err,setErr]=useState(false); const [loading,setLoading]=useState(false);
+function AdminLoginPage({ onLogin, onBack }: { onLogin:(username:string,password:string)=>Promise<string|null>; onBack:()=>void; }) {
+  const [u,setU]=useState(""); const [p,setP]=useState(""); const [showP,setShowP]=useState(false); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
   async function submit(e:React.FormEvent) {
     e.preventDefault(); setLoading(true);
     try {
-      const ok=await onLogin(u,p);
-      if(!ok)setErr(true);
+      const message=await onLogin(u,p);
+      setErr(message ?? "");
     } finally {
       setLoading(false);
     }
@@ -1586,10 +1586,10 @@ function AdminLoginPage({ onLogin, onBack }: { onLogin:(username:string,password
         <h1 className="font-serif text-2xl mb-0.5">Sign in</h1>
         <p className="text-sm text-muted-foreground mb-6">Admin access only</p>
         <form onSubmit={submit} className="space-y-3">
-          <input value={u} onChange={e=>{setU(e.target.value);setErr(false);}} placeholder="Username" autoComplete="username"
+          <input value={u} onChange={e=>{setU(e.target.value);setErr("");}} placeholder="Username" autoComplete="username"
             className="w-full bg-background rounded-xl px-4 py-3 text-sm border border-border focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground"/>
           <div className="relative">
-            <input value={p} onChange={e=>{setP(e.target.value);setErr(false);}} type={showP?"text":"password"} placeholder="••••••••"
+            <input value={p} onChange={e=>{setP(e.target.value);setErr("");}} type={showP?"text":"password"} placeholder="••••••••"
               className="w-full bg-background rounded-xl px-4 py-3 pr-10 text-sm border border-border focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground"/>
             <button type="button" onClick={()=>setShowP(!showP)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
               {showP?<EyeOff className="w-4 h-4"/>:<Eye className="w-4 h-4"/>}
@@ -1598,7 +1598,7 @@ function AdminLoginPage({ onLogin, onBack }: { onLogin:(username:string,password
           <AnimatePresence>
             {err&&<motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:"auto"}} exit={{opacity:0,height:0}} className="overflow-hidden">
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 py-2.5 text-xs flex items-center gap-2">
-                <XCircle className="w-3.5 h-3.5 shrink-0"/>Incorrect username or password.
+                <XCircle className="w-3.5 h-3.5 shrink-0"/>{err}
               </div>
             </motion.div>}
           </AnimatePresence>
@@ -1661,13 +1661,13 @@ function AdminSignupPage({ onCreated, onBack }: { onCreated:(a:{username:string;
 }
 
 // ── Vendor Login ──────────────────────────────────────────────────────────────
-function VendorLoginPage({ onLogin, onBack }: { onLogin:(username:string,password:string)=>Promise<boolean>; onBack:()=>void; }) {
-  const [u,setU]=useState(""); const [p,setP]=useState(""); const [showP,setShowP]=useState(false); const [err,setErr]=useState(false); const [loading,setLoading]=useState(false);
+function VendorLoginPage({ onLogin, onBack }: { onLogin:(username:string,password:string)=>Promise<string|null>; onBack:()=>void; }) {
+  const [u,setU]=useState(""); const [p,setP]=useState(""); const [showP,setShowP]=useState(false); const [err,setErr]=useState(""); const [loading,setLoading]=useState(false);
   async function submit(e:React.FormEvent) {
     e.preventDefault(); setLoading(true);
     try {
-      const ok=await onLogin(u,p);
-      if(!ok)setErr(true);
+      const message=await onLogin(u,p);
+      setErr(message ?? "");
     } finally {
       setLoading(false);
     }
@@ -1678,10 +1678,10 @@ function VendorLoginPage({ onLogin, onBack }: { onLogin:(username:string,passwor
         <h1 className="font-serif text-2xl mb-0.5">Vendor sign in</h1>
         <p className="text-sm text-muted-foreground mb-6">Vendor and superadmin access only</p>
         <form onSubmit={submit} className="space-y-3">
-          <input value={u} onChange={e=>{setU(e.target.value);setErr(false);}} placeholder="Username"
+          <input value={u} onChange={e=>{setU(e.target.value);setErr("");}} placeholder="Username"
             className="w-full bg-background rounded-xl px-4 py-3 text-sm border border-border focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground"/>
           <div className="relative">
-            <input value={p} onChange={e=>{setP(e.target.value);setErr(false);}} type={showP?"text":"password"} placeholder="Password"
+            <input value={p} onChange={e=>{setP(e.target.value);setErr("");}} type={showP?"text":"password"} placeholder="Password"
               className="w-full bg-background rounded-xl px-4 py-3 pr-10 text-sm border border-border focus:border-primary/50 focus:outline-none transition-colors placeholder:text-muted-foreground"/>
             <button type="button" onClick={()=>setShowP(!showP)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
               {showP?<EyeOff className="w-4 h-4"/>:<Eye className="w-4 h-4"/>}
@@ -1689,7 +1689,7 @@ function VendorLoginPage({ onLogin, onBack }: { onLogin:(username:string,passwor
           </div>
           <AnimatePresence>
             {err&&<motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:"auto"}} exit={{opacity:0,height:0}} className="overflow-hidden">
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 py-2.5 text-xs flex items-center gap-2"><XCircle className="w-3.5 h-3.5 shrink-0"/>Incorrect username or password.</div>
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 py-2.5 text-xs flex items-center gap-2"><XCircle className="w-3.5 h-3.5 shrink-0"/>{err}</div>
             </motion.div>}
           </AnimatePresence>
           <button type="submit" disabled={loading||!u||!p}
@@ -3662,9 +3662,9 @@ export default function App() {
         setAdminDashboard(null);
         setAdminOrders([]);
       }
-      return true;
-    } catch {
-      return false;
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : "Could not sign in.";
     }
   }
 
@@ -3807,9 +3807,9 @@ export default function App() {
       });
       setView("vendor");
       await loadVendorData(result.token, account.role);
-      return true;
-    } catch {
-      return false;
+      return null;
+    } catch (error) {
+      return error instanceof Error ? error.message : "Could not sign in.";
     }
   }
 
