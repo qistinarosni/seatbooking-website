@@ -4342,11 +4342,6 @@ export default function App() {
         <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center mx-auto mb-4"><CheckCircle className="w-5 h-5 text-primary"/></div>
         <h1 className="font-serif text-3xl mb-1">Booking Confirmed!</h1>
         <p className="text-sm text-muted-foreground mb-6">Show this QR code at reception to check in.</p>
-        {emailNotice&&(
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 text-emerald-800 px-4 py-3 text-xs text-left mb-3">
-            <div className="flex items-center gap-2 font-semibold"><CheckCircle className="w-3.5 h-3.5"/>{emailNotice}</div>
-          </div>
-        )}
         <div className="bg-card rounded-3xl border border-border p-6 mb-3 shadow-sm">
           <div className="w-48 h-48 mx-auto mb-4 p-2.5 bg-background rounded-2xl border border-border text-foreground"><QRPattern value={booking.ref}/></div>
           <div className="font-mono text-xl font-bold tracking-widest">{booking.ref}</div>
