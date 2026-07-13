@@ -525,7 +525,7 @@ async function expireOldSessions() {
   const rows = await dbAll(`
     SELECT ref, date, start_hour, start_at, duration, status, check_in_at
     FROM bookings
-    WHERE status IN ('paid', 'active', 'payment_pending')
+    WHERE status IN ('paid', 'active')
   `);
 
   for (const row of rows) {
