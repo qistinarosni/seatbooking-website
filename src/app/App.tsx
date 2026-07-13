@@ -687,8 +687,20 @@ function toDate(value?: string|null) {
   return new Date(value.includes("T") ? `${value}Z` : `${value.replace(" ", "T")}Z`);
 }
 
+function normalizeDateValue(value: unknown) {
+  if (typeof value !== "string") return "";
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : value;
+}
+
 function normalizeBooking(b: any): Booking {
-  return { ...b, paidAt: toDate(b.paidAt) ?? new Date(), startAt: toDate(b.startAt), checkInAt: toDate(b.checkInAt) };
+  return {
+    ...b,
+    date: normalizeDateValue(b.date),
+    paidAt: toDate(b.paidAt) ?? new Date(),
+    startAt: toDate(b.startAt),
+    checkInAt: toDate(b.checkInAt),
+  };
 }
 
 function normalizeFoodOrder(o: any): FoodOrder {
