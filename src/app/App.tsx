@@ -2802,7 +2802,7 @@ export default function App() {
 
   // ── Bookings ──
   const [booking,     setBooking]     = useState<Booking|null>(null);
-  const [allBookings, setAllBookings] = useState<Booking[]>(INITIAL_BOOKINGS);
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [secsLeft,    setSecsLeft]    = useState(0);
   const [emailNotice, setEmailNotice] = useState("");
   const [emailDraftUrl, setEmailDraftUrl] = useState("");
@@ -2810,7 +2810,7 @@ export default function App() {
   // ── Food ──
   const [menuItems,  setMenuItems]  = useState<FoodItem[]>(DEFAULT_MENU);
   const [cart,       setCart]       = useState<CartItem[]>([]);
-  const [foodOrders, setFoodOrders] = useState<FoodOrder[]>(INITIAL_FOOD_ORDERS);
+  const [foodOrders, setFoodOrders] = useState<FoodOrder[]>([]);
   const [foodView,   setFoodView]   = useState<"menu"|"checkout"|"payment"|"receipt">("menu");
   const [latestFoodReceipt, setLatestFoodReceipt] = useState<FoodOrder[]>([]);
   const [foodDeliveryChoice, setFoodDeliveryChoice] = useState<"table"|"pickup"|null>(null);
