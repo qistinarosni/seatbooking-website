@@ -1,4 +1,11 @@
 node_modules/
 dist/
 .env
+.env.*
 .DS_Store
+workhub.sqlite
+workhub.sqlite-shm
+workhub.sqlite-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
