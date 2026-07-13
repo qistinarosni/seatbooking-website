@@ -736,6 +736,17 @@ async function listBookings(params) {
   return rows.map(bookingRow);
 }
 
+async function listPendingBookingPayments() {
+  await expireOldSessions();
+  const rows = await dbAll(`
+    SELECT *
+    FROM bookings
+    WHERE status = 'payment_pending'
+    ORDER BY paid_at DESC, ref DESC
+  `);
+  return rows.map(bookingRow);
+}
+
 async function checkIn(ref, actor) {
   await expireOldSessions();
   const found = await dbGet("SELECT * FROM bookings WHERE ref = ?", [ref]);
@@ -1417,6 +1428,10 @@ const routes = [
   ["GET", /^\/api\/admin\/bookings$/, async req => {
     await admin(req);
     return listBookings(new URL(req.url, "http://localhost").searchParams);
+  }],
+  ["GET", /^\/api\/admin\/payments\/bookings$/, async req => {
+    await admin(req);
+    return listPendingBookingPayments();
   }],
   ["GET", /^\/api\/bookings\/([A-Z]+-\d+)$/, async (_req, _body, _url, match) => {
     await expireOldSessions();

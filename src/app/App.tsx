@@ -3579,7 +3579,7 @@ export default function App() {
   }
 
   async function loadPendingBookingPayments(token: string) {
-    const bookings=await apiFetch<any[]>("/api/admin/bookings?status=payment_pending", { headers:bearer(token) });
+    const bookings=await apiFetch<any[]>("/api/admin/payments/bookings", { headers:bearer(token) });
     setPendingBookingPayments(bookings.map(normalizeBooking));
   }
 
