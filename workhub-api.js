@@ -214,12 +214,33 @@ function parseDbTimestamp(value) {
   return new Date(value.includes("T") ? value : `${value.replace(" ", "T")}Z`);
 }
 
+function normalizeDbDate(value) {
+  if (!value) return "";
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : value;
+  }
+  if (value instanceof Date) {
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat("en-CA", {
+        timeZone: BUSINESS_TIMEZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).formatToParts(value).map(part => [part.type, part.value])
+    );
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+  return String(value);
+}
+
 function addHours(dateValue, hours) {
   return new Date(dateValue.getTime() + hours * 3600000);
 }
 
 function scheduledStartDate(dateValue, startHour) {
-  return new Date(`${dateValue}T${String(startHour).padStart(2, "0")}:00:00+08:00`);
+  const normalizedDate = normalizeDbDate(dateValue);
+  return new Date(`${normalizedDate}T${String(startHour).padStart(2, "0")}:00:00+08:00`);
 }
 
 function bookingStartDate(row) {
@@ -269,7 +290,7 @@ function bookingRow(row) {
   return {
     ref: row.ref,
     seatId: row.seat_id,
-    date: row.date,
+    date: normalizeDbDate(row.date),
     startHour: row.start_hour,
     startAt: serializeTimestamp(row.start_at),
     duration: row.duration,
@@ -475,6 +496,7 @@ function bookingEmailContent(row) {
   const seat = seatById(row.seat_id);
   const start = bookingStartDate(row);
   const end = bookingEndDate(row);
+  const bookingDate = normalizeDbDate(row.date);
   const subject = `Your Quety Study Lounge booking ${row.ref}`;
   const body = [
     `Hi ${row.name},`,
@@ -483,7 +505,7 @@ function bookingEmailContent(row) {
     "",
     `Booking reference / QR code: ${row.ref}`,
     `Seat: ${seatDisplay(row.seat_id)}`,
-    `Date: ${row.date}`,
+    `Date: ${bookingDate}`,
     `Time: ${row.start_at && seat && isRollingZone(seat.zone) ? `${formatClock(start)} - ${formatClock(end)}` : `${formatHour(row.start_hour)} - ${formatHour(row.start_hour + row.duration)}`}`,
     `Duration: ${row.duration}h`,
     `Total paid: ${formatMoney(row.total_cents)}`,
