@@ -823,6 +823,14 @@ async function verifyPayment(ref, actor) {
     await dbRun("UPDATE bookings SET status = 'paid', paid_at = CURRENT_TIMESTAMP WHERE ref = ?", [ref]);
   } else {
     const now = businessNow();
+    const currentMinutes = now.hour * 60 + now.minute;
+    const closingMinutes = 22 * 60;
+    if (currentMinutes >= closingMinutes) {
+      throw new HttpError(409, "This booking can no longer be verified because Quety Study Lounge is closed for the day.");
+    }
+    if (currentMinutes + found.duration * 60 > closingMinutes) {
+      throw new HttpError(409, "This booking can no longer be verified because there is not enough time remaining before closing.");
+    }
     await dbRun("UPDATE bookings SET status = 'paid', paid_at = CURRENT_TIMESTAMP, start_at = CURRENT_TIMESTAMP, start_hour = ? WHERE ref = ?", [now.hour, ref]);
   }
   const updated = await dbGet("SELECT * FROM bookings WHERE ref = ?", [ref]);

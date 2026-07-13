@@ -4430,9 +4430,17 @@ export default function App() {
   if(view==="expired"&&booking) return (
     <div className="portal-theme min-h-screen bg-background flex items-center justify-center p-6">
       <motion.div initial={{opacity:0,scale:0.94}} animate={{opacity:1,scale:1}} className="w-full max-w-sm text-center">
+        {(() => {
+          const checkedIn = Boolean(booking.checkInAt);
+          const title = checkedIn ? "Session Ended" : "Booking Expired";
+          const message = checkedIn
+            ? `Your ${booking.duration}-hour session has concluded. This QR code is now invalid.`
+            : "This booking was not checked in before its valid time ended. This QR code is now invalid.";
+          return (
+            <>
         <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-5"><XCircle className="w-7 h-7 text-red-500"/></div>
-        <h1 className="font-serif text-3xl mb-2">Session Ended</h1>
-        <p className="text-sm text-muted-foreground mb-6">Your {booking.duration}-hour session has concluded. This QR code is now invalid.</p>
+        <h1 className="font-serif text-3xl mb-2">{title}</h1>
+        <p className="text-sm text-muted-foreground mb-6">{message}</p>
         <div className="bg-card rounded-3xl border border-border p-6 mb-5 shadow-sm">
           <div className="w-40 h-40 mx-auto mb-4 text-foreground"><QRPattern value={booking.ref} faded/></div>
           <div className="font-mono text-base text-muted-foreground line-through tracking-widest">{booking.ref}</div>
@@ -4442,6 +4450,9 @@ export default function App() {
           className="w-full bg-primary text-primary-foreground rounded-xl py-3 text-sm font-semibold hover:opacity-90 transition-opacity shadow">
           Book Another Seat
         </button>
+            </>
+          );
+        })()}
       </motion.div>
     </div>
   );
