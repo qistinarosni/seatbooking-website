@@ -3479,7 +3479,18 @@ export default function App() {
           ? prev.map(item => item.id === latest.id ? latest : item)
           : [latest, ...prev]);
         if (latest.status === "approved") {
-          setLatestFoodReceipt(latest.orders);
+          setFoodOrders(prev => {
+            const merged = [
+              ...latest.orders.filter(order => !prev.some(existing => existing.id === order.id)),
+              ...prev,
+            ];
+            setLatestFoodReceipt(
+              merged
+                .filter(order => order.bookingRef === latest.bookingRef)
+                .sort((a, b) => a.placedAt.getTime() - b.placedAt.getTime())
+            );
+            return merged;
+          });
           setCart([]);
           setFoodView("receipt");
           return;
