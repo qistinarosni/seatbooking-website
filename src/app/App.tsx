@@ -182,10 +182,27 @@ function fmtTime(sec: number) {
 function fmtHm(sec: number) { const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60); return h>0?`${h}h ${m}m`:`${m}m`; }
 function fmtHour(h: number) { if (h===12) return "12:00 PM"; if (h<12) return `${h}:00 AM`; return `${h-12}:00 PM`; }
 function fmtMoney(n: number) { return `RM ${n.toFixed(2)}`; }
+function getFocusPodTotal(duration: number) {
+  if (duration >= 6) return 20 + (duration - 6) * 3.33;
+  if (duration >= 3) return duration * 4;
+  return duration * 5;
+}
 function getHourlyRate(zone: Zone, duration: number) {
   if (zone === "focus") return duration >= 6 ? 3.33 : duration >= 3 ? 4 : 5;
   if (zone === "discussion") return 10;
   return duration >= 4 ? 25 : 35;
+}
+function getBookingSubtotal(zone: Zone, duration: number) {
+  if (zone === "focus") return getFocusPodTotal(duration);
+  return getHourlyRate(zone, duration) * duration;
+}
+function getSeatPriceHint(zone: Zone, duration: number) {
+  if (zone === "focus" && duration >= 6) return "RM 20.00 for 6h, + RM 3.33/hr after";
+  return `${fmtMoney(getHourlyRate(zone, duration))}/hr`;
+}
+function getBookingPriceSummary(zone: Zone, duration: number) {
+  if (zone === "focus" && duration >= 6) return "RM 20.00 for 6h + RM 3.33/hr after";
+  return `${fmtMoney(getHourlyRate(zone, duration))}/hr × ${duration}h`;
 }
 function fmtDateLabel(s: string) {
   const d = new Date(s + "T12:00:00");
@@ -851,11 +868,11 @@ function SeatBtn({ seat, isSelected, isOccupied, onSelect, displayLabel, duratio
   seat: Seat; isSelected: boolean; isOccupied: boolean; onSelect: (id:string)=>void; displayLabel?: string; duration: number; className?: string; readOnly?: boolean;
 }) {
   const meta = ZONE_META[seat.zone];
-  const rate = getHourlyRate(seat.zone, duration);
+  const priceHint = getSeatPriceHint(seat.zone, duration);
   const isDisabled = isOccupied || readOnly;
   return (
     <button disabled={isDisabled} onClick={()=>onSelect(seat.id)}
-      title={isOccupied?"Occupied":`${seatName(seat)} - ${fmtMoney(rate)}/hr`}
+      title={isOccupied?"Occupied":`${seatName(seat)} - ${priceHint}`}
       className={["w-10 h-10 rounded-xl text-[11px] font-mono font-semibold border transition-all duration-150 flex items-center justify-center shrink-0",
         isOccupied  ?"bg-[#ebe8e1] border-[#dedad0] text-[#c4bfb5] cursor-not-allowed"
         :readOnly   ?"bg-card border-border/70 text-current cursor-default"
@@ -885,7 +902,7 @@ function FocusPodZone({ occupied, selectedId, onSelect, duration, readOnly=false
       <div className="flex items-center gap-1.5 mb-3">
         <span style={{color:hex}}><Wifi className="w-3 h-3"/></span>
         <span className="text-xs font-semibold uppercase tracking-wider" style={{color:hex}}>Focus Pods</span>
-        {showPrice && <span className="ml-auto text-xs text-muted-foreground font-mono">{fmtMoney(getHourlyRate("focus",duration))}/hr</span>}
+        {showPrice && <span className="ml-auto text-xs text-muted-foreground font-mono">{getSeatPriceHint("focus", duration)}</span>}
       </div>
       <div className="flex gap-1.5 mb-4">
         {([1,2] as (1|2)[]).map(l=>(
@@ -1138,7 +1155,7 @@ function BookingDetailsPanel({ selectedDate, selectedHour, duration, seat, meta,
 
           {seat&&showRollingBookingDetails&&(
             <div className="space-y-2 text-sm border-t border-border pt-4">
-              <div className="flex justify-between text-muted-foreground"><span>{meta?.label} · {fmtMoney(hourlyRate)}/hr × {duration}h</span><span>{fmtMoney(subtotal)}</span></div>
+              <div className="flex justify-between text-muted-foreground"><span>{meta?.label} · {getBookingPriceSummary(seat.zone, duration)}</span><span>{fmtMoney(subtotal)}</span></div>
               <div className="flex justify-between font-bold text-base border-t border-border pt-2.5"><span>Total</span><span className="text-primary">{fmtMoney(grand)}</span></div>
             </div>
           )}
@@ -1206,7 +1223,7 @@ function MobileBookingFooter({ selectedDate, selectedHour, duration, seat, meta,
 
       {showRollingBookingDetails && (
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between text-muted-foreground"><span>{meta.label} · {fmtMoney(hourlyRate)}/hr × {duration}h</span><span>{fmtMoney(subtotal)}</span></div>
+          <div className="flex justify-between text-muted-foreground"><span>{meta.label} · {getBookingPriceSummary(seat.zone, duration)}</span><span>{fmtMoney(subtotal)}</span></div>
           <div className="flex justify-between font-bold text-base border-t border-border pt-2.5"><span>Total</span><span className="text-primary">{fmtMoney(grand)}</span></div>
         </div>
       )}
@@ -2883,7 +2900,7 @@ export default function App() {
   const canProceedToPayment = Boolean(seat && selectedDate && (!needsScheduledTime || selectedHour !== null) && rollingBookingValid);
   const showCustomerBookingUI = !selectedDate || selectedDate !== today || !rollingBookingClosedToday;
   const hourlyRate = seat ? getHourlyRate(seat.zone,duration) : 0;
-  const subtotal= seat?hourlyRate*duration:0;
+  const subtotal= seat ? getBookingSubtotal(seat.zone, duration) : 0;
   const fee     = 0;
   const grand   = subtotal;
   const pct     = booking?secsLeft/(booking.duration*3600):1;
