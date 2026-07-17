@@ -6,7 +6,7 @@ import {
   ScanLine, RefreshCw, Users, Eye, EyeOff, Building2,
   Sparkles, ArrowRight, QrCode, Plus, Minus, ShoppingBag,
   Truck, UtensilsCrossed, Filter, Calendar, Clock, Pencil, User, Mail, Phone,
-  LogOut, Trash2, UserPlus, ToggleLeft, ToggleRight, Download, Search,
+  LogOut, Trash2, UserPlus, ToggleLeft, ToggleRight, Download, Search, MapPin, Navigation,
 } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -1347,6 +1347,10 @@ function DateTimePicker({ selectedDate, selectedHour, duration, selectedSeat, on
 function LandingShowcasePage({ onBookNow }: {
   onBookNow: () => void;
 }) {
+  const googleMapsUrl = "https://maps.app.goo.gl/JHJXBb6UdtX4Bn1z8";
+  const wazeUrl = "https://waze.com/ul?q=Lot%2021569%20Kg.%20Alor%20Damat%2021030%20Kuala%20Nerus&navigate=yes";
+  const embedUrl = "https://www.google.com/maps?q=Lot%2021569%2C%20Kg.%20Alor%20Damat%2C%2021030%20Kuala%20Nerus&output=embed";
+
   return (
     <BrandedScreen contentClassName="min-h-screen text-foreground">
       <header className="sticky top-0 z-20 border-b border-border bg-card/95 backdrop-blur">
@@ -1446,6 +1450,75 @@ function LandingShowcasePage({ onBookNow }: {
           >
             Book Your Seat Now
           </button>
+        </div>
+      </section>
+
+      <section className="border-t border-border bg-background px-5 py-16 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-8 max-w-2xl">
+            <h2 className="font-serif text-3xl sm:text-4xl">How to find us</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
+              Make your way to Quety Study Lounge in Kuala Nerus and head straight to the booking entrance.
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+            <div className="border border-border bg-card p-6 shadow-sm" style={{ borderRadius: 8 }}>
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#15345d] px-3 py-1.5 text-xs font-semibold text-[#f1c979]">
+                <MapPin className="h-3.5 w-3.5" />
+                Location
+              </div>
+
+              <h3 className="mt-5 font-serif text-3xl text-[#15345d]">Quety Study Lounge</h3>
+
+              <div className="mt-6 space-y-4 text-sm leading-7 text-[#5f6878] sm:text-base">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Address</div>
+                  <p className="mt-1">
+                    Lot 21569, Kg. Alor Damat, 21030 Kuala Nerus, Terengganu
+                  </p>
+                </div>
+
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Landmark</div>
+                  <p className="mt-1">
+                    2 storey house at the end of the road from the green surau (Surau Haji Ali Al-Amin)
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#15345d] px-5 py-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 shadow-[0_14px_30px_rgba(21,52,93,0.18)]"
+                >
+                  <MapPin className="h-4 w-4" />
+                  Google Maps
+                </a>
+                <a
+                  href={wazeUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#15345d]/15 bg-[#eaf1fb] px-5 py-3 text-sm font-semibold text-[#15345d] transition-colors hover:bg-[#dfeaf8]"
+                >
+                  <Navigation className="h-4 w-4" />
+                  Waze
+                </a>
+              </div>
+            </div>
+
+            <div className="overflow-hidden border border-border bg-card shadow-sm" style={{ borderRadius: 8 }}>
+              <iframe
+                title="Quety Study Lounge map"
+                src={embedUrl}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="h-[320px] w-full border-0 sm:h-[420px]"
+              />
+            </div>
+          </div>
         </div>
       </section>
     </BrandedScreen>
