@@ -1348,7 +1348,7 @@ function LandingShowcasePage({ onBookNow }: {
   onBookNow: () => void;
 }) {
   const googleMapsUrl = "https://maps.app.goo.gl/JHJXBb6UdtX4Bn1z8";
-  const wazeUrl = "https://waze.com/ul?q=Lot%2021569%20Kg.%20Alor%20Damat%2021030%20Kuala%20Nerus&navigate=yes";
+  const wazeUrl = "https://waze.com/ul?ll=5.427583,103.052083&navigate=yes";
   const embedUrl = "https://www.google.com/maps?q=Lot%2021569%2C%20Kg.%20Alor%20Damat%2C%2021030%20Kuala%20Nerus&output=embed";
 
   return (
